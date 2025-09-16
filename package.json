@@ -1,0 +1,16 @@
+{
+  "name": "pseudotwitter",
+  "version": "1.0.0",
+  "description": "Aprendendo React.js e Node.js fazendo um \"tipo de twitter\". Realizado na disciplina de Programação Web II.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "nodemon": "^3.1.10"
+  }
+}
