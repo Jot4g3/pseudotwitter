@@ -1,5 +1,3 @@
-const { sequelize } = require(".");
-
 module.exports = (sequelize, DataTypes) => {
     const comments = sequelize.define("comments", {
         body: {
@@ -8,5 +6,11 @@ module.exports = (sequelize, DataTypes) => {
         },
     });
 
+    comments.associate = (models) => {
+        comments.belongsTo(models.posts, {
+            allowNull: false
+        });
+    };
+
     return comments;
-}
+}   

@@ -8,8 +8,11 @@ app.use(express.json());
 
 const db = require("./models");
 
-const postRouter = require("./routes/posts");
-app.use("/posts", postRouter);
+const postsRouter = require("./routes/posts");
+app.use("/posts", postsRouter);
+
+const commentsRouter = require("./routes/comments");
+app.use("/comments", commentsRouter);
 
 db.sequelize.sync().then(() => {
     app.listen(3001, () =>{
