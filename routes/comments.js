@@ -24,18 +24,25 @@ router.get("/:postId/count", async (req, res) => {
             }
         });
 
-        res.status(200).json({postId: postId, commentCount: count})
+        res.status(200).json({postId: postId, commentCount: count});
     } catch (err) {
-        console.error(`Erro ao contar comentário: ${error}`)
-        res.status(500).json({error: "Erro interno do servidor."})
+        console.error(`Erro ao contar comentário: ${error}`);
+        res.status(500).json({error: "Erro interno do servidor."});
     }
     
 })
 
 router.post("/", async (req, res) => {
-    const comment = req.body;
-    await comments.create(comment);
-    res.json(comment);
+    try {
+        const comment = req.body;
+        await comments.create(comment);
+        res.status(200).json({comment: comment});
+    } catch (err) {
+        console.error(`Erro ao postar comentário: ${error}`);
+        res.status(500).json({error: "Erro interno do servidor."});
+    }
+    
+
 });
 
 module.exports = router;
