@@ -1,8 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const { users, posts } = require("../models");
+const { users } = require("../models");
 const bcrypt = require("bcrypt");
-const { sign } = require("jsonwebtoken");
+
+const authRequired = (req, res, next) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: "Não autorizado." });
+    }
+    next();
+};
 
 router.post("/", async (req, res) => {
     try {
@@ -19,12 +25,15 @@ router.post("/", async (req, res) => {
 
         const hash = await bcrypt.hash(password, 10);
         
-        await users.create({
+        const newUser = await users.create({
             username: username,
             password: hash,
         });
         
-        res.status(201).json({ message: "Usuário criado com sucesso." });
+        res.status(201).json({
+            message: "Usuário criado com sucesso.",
+            user: {id: newUser.id, username: newUser.username}
+        });
 
     } catch (error) {
         console.error("Erro ao registrar usuário:", error);
@@ -36,7 +45,7 @@ router.post("/login", async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        const user = await users.findOne({ where: { username: username } });
+        const user = await users.findOne({ where: { username } });
         if (!user) {
             return res.status(400).json({ error: "Usuário ou senha incorretos." });
         }
@@ -59,15 +68,11 @@ router.post("/login", async (req, res) => {
     }
 });
 
-router.get("/me", (req, res) => {
-    if (req.session.user) {
-        return res.json(req.session.user);
-    } else {
-        return res.status(401).json({ error: "Usuário não autenticado." });
-    }
+router.get("/me", authRequired,(req, res) => {
+    return res.json(req.session.user);
 });
 
-router.post("/logout", (req, res) => {
+router.post("/logout", authRequired,(req, res) => {
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({ error: "Falha ao fazer logout." });
@@ -76,4 +81,5 @@ router.post("/logout", (req, res) => {
         return res.status(200).json({ message: "Logout com sucesso." });
     });
 });
+
 module.exports = router;

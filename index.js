@@ -18,12 +18,14 @@ app.use(express.json());
 
 app.use(
     session({
-        secret: process.env.JWT_PASS,
+        secret: process.env.SESSION_PASS,
         resave: false,
         saveUninitialized: false,
         cookie: {
             secure: false, 
-            maxAge: 1000 * 60 * 60 * 24 
+            maxAge: 1000 * 60 * 60 * 24,
+            sameSite: "lax",
+            httpOnly: true,
         },
     })
 );

@@ -1,24 +1,39 @@
 const express = require("express");
 const router = express.Router();
-const { posts, sequelize } = require("../models");
+const { posts, users, comments, sequelize } = require("../models");
+const requireAuth = require("../util/requireAuth");
 
 router.get("/", async (req, res) => {
     try {
         const listOfPosts = await posts.findAll({
+            include: [
+                {
+                    model: users,
+                    attributes: ['username']
+                },
+                {
+                    model: comments,
+                    attributes: [],
+                }
+            ],
             attributes: {
                 include: [
-                    [
-                        sequelize.literal(`(
-                            SELECT COUNT(*)
-                            FROM comments
-                            WHERE comments.postId = posts.id
-                        )`),
-                        'commentCount'
-                    ]
+                    [sequelize.fn("COUNT", sequelize.col("comments.id")), "commentCount"]
                 ]
             },
+            group: [
+                'posts.id', 
+                'posts.title', 
+                'posts.text', 
+                'posts.createdAt', 
+                'posts.updatedAt', 
+                'posts.userId',
+                'user.id',
+                'user.username'
+            ],
             order: [['createdAt', 'DESC']]
         });
+
         
         res.json(listOfPosts);
 
@@ -30,29 +45,37 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
     try {
-        const id = req.params.id;
-        
+        const { id } = req.params;
+
         const post = await posts.findOne({
-            where: { id: id },
-            attributes: {
-                include: [
-                    [
-                        sequelize.literal(`(
-                            SELECT COUNT(*)
-                            FROM comments
-                            WHERE comments.postId = posts.id
-                        )`),
-                        'commentCount'
-                    ]
-                ]
-            }
+            where: { id },
+            include: [
+                {
+                    model: users,
+                    attributes: ['username']
+                },
+                {
+                    model: comments,
+                    attributes: ['id'] // Pega IDs dos comentários para contar depois
+                }
+            ]
         });
 
         if (!post) {
-            return res.status(44).json({ error: "Post não encontrado" });
+            return res.status(404).json({ error: "Post não encontrado" });
         }
-        
-        res.json(post);
+
+        // Adiciona commentCount manualmente
+        const result = {
+            id: post.id,
+            title: post.title,
+            text: post.text,
+            createdAt: post.createdAt,
+            user: post.user,
+            commentCount: post.comments.length
+        };
+
+        res.json(result);
 
     } catch (error) {
         console.error("Erro ao buscar post por ID:", error);
@@ -60,19 +83,33 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-router.post("/", async (req, res) => {
+
+router.post("/", requireAuth, async (req, res) => {
     try {
-        const post = req.body;
+        const {title, text} = req.body;
         
-        if (!post.title || !post.text || !post.username) {
-             return res.status(400).json({ error: "Todos os campos (title, text, username) são obrigatórios." });
-        }
+        if (!title || !text) {
+             return res.status(400).json({ error: "Os campos título e detalhes são obrigatórios." });
+        }   
 
-        const newPost = await posts.create(post);
-        res.status(201).json(newPost); 
+        const newPost = await posts.create({
+            title,
+            text,
+            userId: req.session.user.id
+        });
 
-    } catch (error) {
-        console.error("Erro ao criar post:", error);
+        const fullPost = await posts.findOne({
+            where: { id: newPost.id },
+            include: {
+                model: users,
+                attributes: ['username']
+            }
+        });
+
+        res.status(201).json(fullPost); 
+
+    } catch (err) {
+        console.error("Erro ao criar post:", err);
         res.status(500).json({ error: "Erro interno do servidor" });
     }
 });

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const {comments, posts} = require("../models");
+const requireAuth = require("../util/requireAuth");
 
 router.get("/:postId", async (req, res) => {
     const postId = req.params.postId;
@@ -32,17 +33,26 @@ router.get("/:postId/count", async (req, res) => {
     
 })
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
     try {
-        const comment = req.body;
-        await comments.create(comment);
-        res.status(200).json({comment: comment});
+        const {body, postId} = req.body;
+
+        if(!body || !postId) {
+             return res.status(400).json({ error: "Comentário e postId são obrigatórios." });
+        }
+
+        const newComment = await comments.create({
+            body,
+            postId,
+            userId: req.session.user.id // Pegando o user logado na session
+        });
+        
+        return res.status(201).json(newComment);
+
     } catch (err) {
         console.error(`Erro ao postar comentário: ${error}`);
-        res.status(500).json({error: "Erro interno do servidor."});
+        return res.status(500).json({error: "Erro interno do servidor."});
     }
-    
-
 });
 
 module.exports = router;
