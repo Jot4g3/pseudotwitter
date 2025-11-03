@@ -56,7 +56,7 @@ router.get("/:id", async (req, res) => {
                 },
                 {
                     model: comments,
-                    attributes: ['id'] // Pega IDs dos comentários para contar depois
+                    attributes: ['id'] // Pega os IDs dos comentários para contar depois
                 }
             ]
         });
@@ -65,7 +65,7 @@ router.get("/:id", async (req, res) => {
             return res.status(404).json({ error: "Post não encontrado" });
         }
 
-        // Adiciona commentCount manualmente
+        // Adicionando commentCount manualmente - com include não prestou
         const result = {
             id: post.id,
             title: post.title,
