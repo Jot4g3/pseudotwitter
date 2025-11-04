@@ -29,6 +29,11 @@ router.post("/", async (req, res) => {
             username: username,
             password: hash,
         });
+
+        req.session.user = {
+            id: newUser.id,
+            username: newUser.username
+        };
         
         res.status(201).json({
             message: "Usuário criado com sucesso.",
